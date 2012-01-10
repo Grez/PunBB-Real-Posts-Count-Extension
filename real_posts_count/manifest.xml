@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE extension SYSTEM "ext-1.0.dtd">
+
+<!--
+
+	Copyright © 2012 Tom "Grez" Bartoň
+	Released under WTFPL license <http://www.google.com/?q=wtfpl>
+
+-->
+
+<extension engine="1.0">
+	<id>real_posts_count</id>
+	<title>Real posts count</title>
+	<version>1.0</version>
+	<description>Changes forum's post count to real one (w/o deleted posts).</description>
+	<author>Grez</author>
+	<minversion>1.4.1</minversion>
+	<maxtestedon>1.4.1</maxtestedon>
+	
+	<install>
+<![CDATA[
+
+		//UPDATE users AS u
+		//SET u.num_posts = (SELECT count(*) FROM posts WHERE posts.poster_id = u.id GROUP BY posts.poster_id);
+
+		$subquery = array(
+			'SELECT' => 'count(*)',
+			'FROM' => 'posts',
+			'WHERE' => 'posts.poster_id = u.id',
+			'GROUP BY' => 'posts.poster_id'
+		);
+
+		$query = array(
+			'UPDATE' => 'users AS u',
+			'SET' => 'u.num_posts = (' . $forum_db->query_build($subquery, true) . ')'
+		);
+
+		$forum_db->query_build($query) or error(__FILE__, __LINE__);
+
+]]>
+	</install>
+	
+	<hooks>
+		<hook id="fn_delete_topic_qr_delete_topic_posts">
+<![CDATA[
+
+		$q = array(
+			'SELECT' => 'count(*) AS posts, poster_id',
+			'FROM' => 'posts',
+			'WHERE' => 'topic_id=' . $topic_id,
+			'GROUP BY' => 'poster_id'
+		);
+
+		$r = $forum_db->query_build($q) or error(__FILE__, __LINE__);
+		while ($res = $forum_db->fetch_assoc($r)) {
+
+			$update = array(
+				'UPDATE' => 'users',
+				'SET' => 'num_posts = num_posts - ' . intVal($res['posts']),
+				'WHERE' => 'id = ' . intVal($res['poster_id'])
+			);
+			$forum_db->query_build($update) or error(__FILE__, __LINE__);
+
+		}
+
+]]>
+		</hook>
+		<hook id="fn_delete_post_qr_delete_post'">
+<![CDATA[
+
+	$poster_id = array(
+		'SELECT' => 'poster_id',
+		'FROM' => 'posts',
+		'WHERE' => 'id = ' . intVal($post_id)
+	);
+
+	$q = array(
+		'UPDATE' => 'users',
+		'SET' => 'num_posts = num_posts - 1',
+		'WHERE' => 'id = (' . $forum_db->query_build($poster_id, true) . ')'
+	);
+
+	$forum_db->query_build($q) or error(__FILE__, __LINE__);
+
+]]>
+		</hook>
+	</hooks>
+</extension>
