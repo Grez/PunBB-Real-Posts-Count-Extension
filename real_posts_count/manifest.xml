@@ -12,10 +12,10 @@
 	<id>real_posts_count</id>
 	<title>Real posts count</title>
 	<version>1.0</version>
-	<description>Changes forum's post count to real one (w/o deleted posts).</description>
-	<author>Grez</author>
-	<minversion>1.4.1</minversion>
-	<maxtestedon>1.4.1</maxtestedon>
+	<description>Changes forum post count to real one (w/o deleted posts).</description>
+	<author>Grez (fixes by Astro)</author>
+	<minversion>1.4RC</minversion>
+	<maxtestedon>1.4.2</maxtestedon>
 	
 	<install>
 <![CDATA[
@@ -23,12 +23,12 @@
 		//UPDATE users AS u
 		//SET u.num_posts = (SELECT count(*) FROM posts WHERE posts.poster_id = u.id GROUP BY posts.poster_id);
 
-		$subquery = array(
-			'SELECT' => 'count(*)',
-			'FROM' => 'posts',
-			'WHERE' => 'posts.poster_id = u.id',
-			'GROUP BY' => 'posts.poster_id'
-		);
+        $subquery = array(
+            'SELECT' => 'count(*)',
+            'FROM' => 'posts as posts',
+            'WHERE' => 'posts.poster_id = u.id',
+            'GROUP BY' => 'posts.poster_id'
+        );
 
 		$query = array(
 			'UPDATE' => 'users AS u',
@@ -65,7 +65,7 @@
 
 ]]>
 		</hook>
-		<hook id="fn_delete_post_qr_delete_post'">
+		<hook id="fn_delete_post_qr_delete_post">
 <![CDATA[
 
 	$poster_id = array(
